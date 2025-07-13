@@ -12,8 +12,8 @@ client = TelegramClient('session', api_id, api_hash)
 
 # Channels to download images from
 channels = [
-    #"https://t.me/lobelia4cosmetics",
-    #"https://t.me/tikvahpharma",
+    "https://t.me/lobelia4cosmetics",
+    "https://t.me/tikvahpharma",
     "https://t.me/CheMed123",
 ]
 
