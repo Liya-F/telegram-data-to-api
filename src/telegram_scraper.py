@@ -16,8 +16,9 @@ client = TelegramClient('session', api_id, api_hash)
 channels = [
     "https://t.me/lobelia4cosmetics",
     "https://t.me/tikvahpharma",
-    "https://t.me/CheMed123",
+    "https://t.me/CheMed123"
 ]
+
 
 today_str = datetime.today().strftime("%Y-%m-%d")
 log_file = "scrape_log.txt"
