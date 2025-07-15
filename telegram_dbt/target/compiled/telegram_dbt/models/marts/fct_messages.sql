@@ -11,4 +11,4 @@ select
     views,
     forwards,
     reply_count
-from {{ ref('stg_telegram_messages') }}
+from "telegram_data"."raw"."stg_telegram_messages"

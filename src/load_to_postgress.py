@@ -6,44 +6,85 @@ from datetime import datetime
 
 load_dotenv()
 
-PG_CONN = os.getenv("PG_CONN_STRING")  
+DB_NAME = os.getenv("POSTGRES_DB")
+DB_USER = os.getenv("POSTGRES_USER")
+DB_PASSWORD = os.getenv("POSTGRES_PASSWORD")
+DB_HOST = os.getenv("POSTGRES_HOST", "localhost")
+DB_PORT = os.getenv("POSTGRES_PORT", 5432)
 
-conn = psycopg2.connect(PG_CONN)
-cursor = conn.cursor()
+conn = psycopg2.connect(
+    dbname=DB_NAME, user=DB_USER,
+    password=DB_PASSWORD, host=DB_HOST, port=DB_PORT
+)
+cur = conn.cursor()
 
-# Create table if not exists (run only once ideally)
-cursor.execute("""
-CREATE SCHEMA IF NOT EXISTS raw;
-CREATE TABLE IF NOT EXISTS raw.telegram_messages (
-    id BIGINT PRIMARY KEY,
-    channel TEXT,
-    text TEXT,
-    date TIMESTAMP,
-    has_media BOOLEAN,
-    json_data JSONB
-);
+# Ensure the raw schema exists
+cur.execute("CREATE SCHEMA IF NOT EXISTS raw")
+
+# Create table if it doesn't exist
+cur.execute("""
+    CREATE TABLE IF NOT EXISTS raw.raw_telegram_messages (
+        id SERIAL PRIMARY KEY,
+        message_id INTEGER,
+        channel_name TEXT,
+        message_text TEXT,
+        message_date TIMESTAMP,
+        views INTEGER,
+        forwards INTEGER,
+        has_media BOOLEAN,
+        media_type TEXT,
+        reply_count INTEGER,
+        reactions_json TEXT
+    )
 """)
 conn.commit()
 
-# Load all JSON files from folder
-data_folder = "data/raw/telegram_messages"
-for root, _, files in os.walk(data_folder):
-    for file in files:
-        if file.endswith(".json"):
-            with open(os.path.join(root, file), "r", encoding="utf-8") as f:
-                messages = json.load(f)
-                for msg in messages:
-                    msg_id = msg.get("id")
-                    date = msg.get("date")
-                    text = msg.get("message")
-                    channel = msg.get("peer_id", {}).get("channel_id", "unknown")
-                    has_media = msg.get("media") is not None
+# Load files from the data lake folder
+data_path = "data/raw/telegram_messages"
+today = "2025-07-15" 
+folder = os.path.join(data_path, today)
 
-                    cursor.execute("""
-                    INSERT INTO raw.telegram_messages (id, channel, text, date, has_media, json_data)
-                    VALUES (%s, %s, %s, %s, %s, %s)
-                    ON CONFLICT (id) DO NOTHING;
-                    """, (msg_id, str(channel), text, date, has_media, json.dumps(msg)))
+for filename in os.listdir(folder):
+    if not filename.endswith(".json"):
+        continue
+
+    channel_name = filename.replace(".json", "")
+    with open(os.path.join(folder, filename), "r", encoding="utf-8") as f:
+        messages = json.load(f)
+
+    for msg in messages:
+        message_id = msg.get("id")
+        message_text = msg.get("message") or ""
+        message_date = msg.get("date")
+        views = msg.get("views") or 0
+        forwards = msg.get("forwards") or 0
+
+        has_media = msg.get("media") is not None
+        media_type = msg.get("media", {}).get("_") if has_media else None
+
+        replies_obj = msg.get("replies")
+        reply_count = replies_obj.get("replies", None) if isinstance(replies_obj, dict) else None
+
+        reactions_obj = msg.get("reactions")
+        if isinstance(reactions_obj, dict):
+            reactions = reactions_obj.get("results", [])
+        else:
+            reactions = []
+
+        reactions_str = json.dumps(reactions, ensure_ascii=False)
+
+        # Insert into the database
+        cur.execute("""
+            INSERT INTO raw.raw_telegram_messages (
+                message_id, channel_name, message_text, message_date,
+                views, forwards, has_media, media_type, reply_count, reactions_json
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        """, (
+            message_id, channel_name, message_text, message_date,
+            views, forwards, has_media, media_type, reply_count, reactions_str
+        ))
+
 conn.commit()
-cursor.close()
+cur.close()
 conn.close()
+print("✅ Data successfully loaded into PostgreSQL.")
