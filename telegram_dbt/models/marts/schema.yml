@@ -25,3 +25,13 @@ models:
       - name: has_media
       - name: views
       - name: reply_count
+
+  - name: fct_image_detections
+    description: Object detection results on Telegram channel images using YOLOv8
+    columns:
+      - name: channel_name
+        tests: [not_null]
+      - name: image_file
+        tests: [not_null]
+      - name: detected_class
+      - name: confidence_score
