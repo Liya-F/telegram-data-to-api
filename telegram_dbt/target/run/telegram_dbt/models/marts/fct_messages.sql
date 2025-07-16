@@ -1,3 +1,10 @@
+
+  create view "telegram_data"."raw"."fct_messages__dbt_tmp"
+    
+    
+  as (
+    -- models/marts/fct_messages.sql
+
 select
     message_id,
     channel_name as channel_id,
@@ -9,4 +16,5 @@ select
     views,
     forwards,
     reply_count
-from {{ ref('stg_telegram_messages') }}
+from "telegram_data"."raw"."stg_telegram_messages"
+  );

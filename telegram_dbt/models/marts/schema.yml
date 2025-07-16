@@ -1,0 +1,37 @@
+version: 2
+
+models:
+  - name: dim_channels
+    description: One row per Telegram channel
+    columns:
+      - name: channel_id
+        tests: [unique, not_null]
+
+  - name: dim_dates
+    description: One row per unique message date
+    columns:
+      - name: date_id
+        tests: [unique, not_null]
+
+  - name: fct_messages
+    description: Fact table containing all Telegram messages
+    columns:
+      - name: message_id
+        tests: [unique, not_null]
+      - name: channel_id
+        tests: [not_null]
+      - name: date_id
+        tests: [not_null]
+      - name: has_media
+      - name: views
+      - name: reply_count
+
+  - name: fct_image_detections
+    description: Object detection results on Telegram channel images using YOLOv8
+    columns:
+      - name: channel_name
+        tests: [not_null]
+      - name: image_file
+        tests: [not_null]
+      - name: detected_class
+      - name: confidence_score
