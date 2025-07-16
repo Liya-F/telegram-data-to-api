@@ -1,0 +1,29 @@
+[project]
+name = "pipeline_project"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.9,<=3.13.3"
+dependencies = [
+    "dagster",
+    "dagster-cloud",
+]
+
+[project.optional-dependencies]
+dev = [
+    "dagster-webserver", 
+    "pytest",
+]
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+
+[tool.setuptools.packages.find]
+exclude=["pipeline_project_tests"]
+
+[tool.dagster]
+module_name = "pipeline_project.pipeline_project"
+
+
