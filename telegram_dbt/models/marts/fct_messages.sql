@@ -1,5 +1,3 @@
--- models/marts/fct_messages.sql
-
 select
     message_id,
     channel_name as channel_id,

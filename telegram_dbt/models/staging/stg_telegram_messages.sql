@@ -1,5 +1,3 @@
--- models/staging/stg_telegram_messages.sql
-
 with source as (
     select * from raw.raw_telegram_messages
 ),
